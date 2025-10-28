@@ -32,8 +32,8 @@ def get_redis_cache_metrics():
         misses = info.get("keyspace_misses", 0)
 
         # Avoid division by zero
-        total = hits + misses
-        hit_ratio = (hits / total) if total > 0 else 0
+        total_requests = hits + misses
+        hit_ratio = hits / total_requests if total_requests > 0 else 0
 
         metrics = {
             "hits": hits,
