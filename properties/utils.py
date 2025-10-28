@@ -1,5 +1,8 @@
+import logging
 from django.core.cache import cache
 from .models import Property
+
+logger = logging.getLogger(__name__)
 
 def get_all_properties():
     # Try to get cached data from Redis
@@ -14,3 +17,39 @@ def get_all_properties():
         cache.set('all_properties', properties, 3600)
 
     return properties
+
+def get_redis_cache_metrics():
+    """
+    Retrieves Redis cache hit/miss metrics and computes hit ratio.
+    """
+    try:
+        # Connect to Redis
+        redis_conn = get_redis_connection("default")
+        info = redis_conn.info()
+
+        # Extract hit/miss stats
+        hits = info.get("keyspace_hits", 0)
+        misses = info.get("keyspace_misses", 0)
+
+        # Avoid division by zero
+        total = hits + misses
+        hit_ratio = (hits / total) if total > 0 else 0
+
+        metrics = {
+            "hits": hits,
+            "misses": misses,
+            "hit_ratio": round(hit_ratio, 2)
+        }
+
+        # Log metrics for monitoring
+        logger.info(f"Redis Cache Metrics: {metrics}")
+
+        return metrics
+
+    except Exception as e:
+        logger.error(f"Error retrieving Redis cache metrics: {e}")
+        return {
+            "hits": 0,
+            "misses": 0,
+            "hit_ratio": 0
+        }
